@@ -1,3 +1,30 @@
 <!doctype html>
-<html lang="{{ site.Language.LanguageCode | default "en" }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b0d14"><meta name="description" content="{{ .Description | default site.Params.description }}"><title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} · {{ site.Title }}{{ end }}</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="{{ "css/site.css" | relURL }}"><link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ "index.xml" | relURL }}"></head>
-<body><div class="ambient ambient-one"></div><div class="ambient ambient-two"></div><header class="topbar"><a class="brand" href="{{ site.Home.RelPermalink }}"><span class="brand-mark">C</span><span>compico<span class="brand-light">.dev</span></span></a><nav><a href="{{ site.Home.RelPermalink }}#projects">Projects</a><a href="{{ "overlaycomposer/" | relURL }}">OverlayComposer</a><a class="nav-github" href="https://github.com/compico" target="_blank" rel="noreferrer">GitHub ↗</a></nav></header><main>{{ block "main" . }}{{ end }}</main><footer class="footer"><span>© {{ now.Year }} Compico</span><span>Made with <a href="https://gohugo.io/" target="_blank" rel="noreferrer">Hugo</a> · <a href="https://github.com/compico" target="_blank" rel="noreferrer">GitHub ↗</a></span></footer></body></html>
+<html lang="{{ site.Language.LanguageCode | default "en" }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111318">
+  <meta name="description" content="{{ .Description | default site.Params.description }}">
+  <title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} · {{ site.Title }}{{ end }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ "index.xml" | relURL }}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="{{ site.Home.RelPermalink }}"><span class="brand-mark">C</span><span>compico</span></a>
+  <nav>
+    <a href="{{ site.Home.RelPermalink }}#projects">{{ if eq site.Language.Lang "ru" }}Проекты{{ else }}Projects{{ end }}</a>
+    <a href="{{ "overlaycomposer/" | relURL }}">OverlayComposer</a>
+    <div class="language-switch">{{ range site.Home.AllTranslations }}<a class="{{ if eq .Language.Lang site.Language.Lang }}active{{ end }}" href="{{ .RelPermalink }}">{{ .Language.LanguageName }}</a>{{ end }}</div>
+  </nav>
+</header>
+<main>{{ block "main" . }}{{ end }}</main>
+<footer class="footer">
+  <span>© {{ now.Year }} Compico</span>
+  <span>{{ if eq site.Language.Lang "ru" }}Сделано с{{ else }}Made with{{ end }} <a href="https://gohugo.io/" target="_blank" rel="noreferrer">Hugo</a></span>
+</footer>
+</body>
+</html>
