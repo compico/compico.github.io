@@ -1,18 +1,16 @@
 {{ define "main" }}
 <section class="portfolio-hero">
-  <div class="eyebrow"><span class="pulse"></span> INDEPENDENT DEVELOPER</div>
-  <h1>Building useful<br><span>things for the web.</span></h1>
-  <p class="hero-copy">I'm Compico. I build software, explore ideas, and turn small problems into useful tools.</p>
-  <div class="hero-actions"><a class="button button-primary" href="#projects">Explore projects ↓</a><a class="button button-quiet" href="https://github.com/compico" target="_blank" rel="noreferrer">GitHub ↗</a></div>
-  <div class="hero-orbit orbit-a"></div><div class="hero-orbit orbit-b"></div><div class="hero-grid"></div>
-  <div class="hero-version"><span class="version-dot"></span><span>BUILD · LEARN · SHIP</span></div>
+  <div class="eyebrow">{{ if eq site.Language.Lang "ru" }}РАЗРАБОТЧИК{{ else }}INDEPENDENT DEVELOPER{{ end }}</div>
+  <h1>{{ if eq site.Language.Lang "ru" }}Создаю полезные<br><span>программы и инструменты.</span>{{ else }}Building useful<br><span>software and tools.</span>{{ end }}</h1>
+  <p class="hero-copy">{{ if eq site.Language.Lang "ru" }}Я Compico. Разрабатываю приложения, экспериментирую с идеями и превращаю их в полезные инструменты.{{ else }}I'm Compico. I build software, explore ideas, and turn them into useful tools.{{ end }}</p>
+  <div class="hero-actions"><a class="button button-primary" href="#projects">{{ if eq site.Language.Lang "ru" }}Мои проекты{{ else }}Explore projects{{ end }} ↓</a></div>
 </section>
 <section class="content-section" id="projects">
-  <div class="section-heading"><div><div class="eyebrow">SELECTED WORK</div><h2>Projects</h2></div><span class="section-note">Things I'm building</span></div>
-  <a class="project-card" href="{{ "overlaycomposer/" | relURL }}">
-    <div class="project-visual"><div class="project-window"><div class="window-dots"><i></i><i></i><i></i></div><div class="mock-canvas"><span class="mock-widget widget-one">CHAT</span><span class="mock-widget widget-two">ALERT</span><span class="mock-widget widget-three">LATEST FOLLOWER</span><span class="mock-cursor"></span></div></div><span class="project-index">01 / FEATURED</span></div>
-    <div class="project-info"><div class="eyebrow">DESKTOP APP · OBS TOOLING</div><h3>OverlayComposer</h3><p>One Browser Source for all your stream widgets. Design layouts for every OBS scene in a visual editor.</p><div class="project-links"><span>Explore project <b>↗</b></span><span>Documentation <b>↗</b></span></div></div>
-  </a>
+  <div class="section-heading"><div><div class="eyebrow">{{ if eq site.Language.Lang "ru" }}ИЗБРАННОЕ{{ else }}SELECTED WORK{{ end }}</div><h2>{{ if eq site.Language.Lang "ru" }}Проекты{{ else }}Projects{{ end }}</h2></div></div>
+  <div class="project-list">
+    <a class="simple-project-card" href="https://github.com/compico/go-osu" target="_blank" rel="noreferrer"><div><span class="project-type">GO · OPEN SOURCE</span><h3>go-osu</h3><p>{{ if eq site.Language.Lang "ru" }}Проект на Go для работы с osu!.{{ else }}A Go project related to osu!.{{ end }}</p></div><span class="project-arrow">↗</span></a>
+    <a class="simple-project-card" href="{{ "overlaycomposer/" | relURL }}"><div><span class="project-type">DESKTOP APP · OBS</span><h3>OverlayComposer</h3><p>{{ if eq site.Language.Lang "ru" }}Визуальный редактор оверлеев и виджетов для OBS.{{ else }}A visual editor for OBS overlays and widgets.{{ end }}</p></div><span class="project-arrow">↗</span></a>
+  </div>
 </section>
-<section class="about-strip"><div><div class="eyebrow">A LITTLE ABOUT ME</div><h2>Curiosity first.<br>Useful software always.</h2></div><p>This is my corner of the internet — a home for projects, notes, experiments, and things worth sharing. More work will find its way here over time.</p></section>
+<section class="about-strip"><div><div class="eyebrow">{{ if eq site.Language.Lang "ru" }}О САЙТЕ{{ else }}ABOUT THIS SITE{{ end }}</div><h2>{{ if eq site.Language.Lang "ru" }}Проекты, идеи<br>и эксперименты.{{ else }}Projects, ideas<br>and experiments.{{ end }}</h2></div><p>{{ if eq site.Language.Lang "ru" }}Здесь собраны мои проекты и материалы о них. Со временем здесь появится больше интересного.{{ else }}A home for my projects and the notes around them. More work will find its way here over time.{{ end }}</p></section>
 {{ end }}
