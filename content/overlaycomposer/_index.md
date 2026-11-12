@@ -12,4 +12,4 @@ OverlayComposer brings your stream widgets into one place. Arrange alerts, chat,
 - **Visual editor** — position, resize, rotate, crop, and organize layers on a canvas.
 - **Extensible widgets** — use built-in sources, install plugins, or add your own HTML widgets.
 
-[Read the documentation](/compico/overlaycomposer/docs/) · [Browse release notes](/compico/overlaycomposer/releases/) · [View source on GitHub](https://github.com/compico/overlaycomposer)
+[Read the documentation](docs/) · [Browse release notes](releases/) · [View source on GitHub](https://github.com/compico/overlaycomposer)
