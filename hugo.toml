@@ -1,10 +1,22 @@
 baseURL = "https://compico.github.io/"
 languageCode = "en-us"
-title = "Compico — Developer & Projects"
+title = "Compico"
 enableRobotsTXT = true
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = false
+
+[languages]
+  [languages.en]
+    languageName = "English"
+    languageCode = "en-us"
+    weight = 1
+  [languages.ru]
+    languageName = "Русский"
+    languageCode = "ru-ru"
+    weight = 2
 
 [params]
-  description = "Independent developer building thoughtful tools."
+  description = "Independent developer building software projects and useful tools."
   projectURL = "https://github.com/compico/overlaycomposer"
 
 [outputs]
