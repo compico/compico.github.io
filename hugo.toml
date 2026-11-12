@@ -8,7 +8,7 @@ disableKinds = ["taxonomy", "term"]
   productName = "OverlayComposer"
   tagline = "Release notes, updates, and what's new."
   repository = "https://github.com/compico/compico"
-  projectRepository = "https://github.com/compico/OverlayComposer"
+  projectRepository = "https://github.com/compico"
 
 [permalinks]
   releases = "/releases/:slug/"
