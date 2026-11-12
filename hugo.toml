@@ -1,0 +1,21 @@
+baseURL = "https://compico.github.io/compico/"
+languageCode = "en-us"
+title = "OverlayComposer Releases"
+enableRobotsTXT = true
+disableKinds = ["taxonomy", "term"]
+
+[params]
+  productName = "OverlayComposer"
+  tagline = "Release notes, updates, and what's new."
+  repository = "https://github.com/compico/compico"
+  projectRepository = "https://github.com/compico/OverlayComposer"
+
+[permalinks]
+  releases = "/releases/:slug/"
+
+[outputs]
+  home = ["HTML", "RSS"]
+
+[caches]
+  [caches.images]
+    dir = ":cacheDir/images"
