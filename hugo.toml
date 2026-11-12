@@ -1,4 +1,4 @@
-baseURL = "https://compico.github.io/compico/"
+baseURL = "https://compico.github.io/"
 languageCode = "en-us"
 title = "Compico — Developer & Projects"
 enableRobotsTXT = true
