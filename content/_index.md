@@ -1,6 +1,6 @@
 ---
-title: "OverlayComposer"
-description: "Release notes and product updates for OverlayComposer."
+title: "Compico"
+description: "Independent developer building thoughtful tools."
 ---
 
-The home page content is managed by the Hugo layout. Add release notes under **Releases**.
+I build software, explore ideas, and make tools that solve real problems.
