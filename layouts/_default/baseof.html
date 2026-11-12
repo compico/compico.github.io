@@ -9,15 +9,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ "css/site.css" | relURL }}">
-  <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ "index.xml" | relURL }}">
+  <link rel="stylesheet" href="{{ "css/site.css" | relLangURL }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ "index.xml" | relLangURL }}">
 </head>
 <body>
 <header class="topbar">
   <a class="brand" href="{{ site.Home.RelPermalink }}"><span class="brand-mark">C</span><span>compico</span></a>
   <nav>
     <a href="{{ site.Home.RelPermalink }}#projects">{{ if eq site.Language.Lang "ru" }}Проекты{{ else }}Projects{{ end }}</a>
-    <a href="{{ "overlaycomposer/" | relURL }}">OverlayComposer</a>
+    <a href="{{ "overlaycomposer/" | relLangURL }}">OverlayComposer</a>
     <div class="language-switch">{{ range site.Home.AllTranslations }}<a class="{{ if eq .Language.Lang site.Language.Lang }}active{{ end }}" href="{{ .RelPermalink }}">{{ .Language.LanguageName }}</a>{{ end }}</div>
   </nav>
 </header>
