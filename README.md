@@ -1,35 +1,23 @@
-# OverlayComposer Release Hub
+# Compico — portfolio & project hub
 
-A Hugo-powered release notes website for OverlayComposer.
+A Hugo-powered portfolio with a dedicated OverlayComposer area.
 
-## Local development
+## Local preview
 
-Install Hugo, then run:
+Install Hugo Extended and run: hugo server
 
-```sh
-hugo server
-```
+## Site structure
 
-Open http://localhost:1313.
+- content/_index.md — portfolio homepage.
+- content/overlaycomposer/_index.md — OverlayComposer project page.
+- content/overlaycomposer/docs/ — manually maintained documentation.
+- content/overlaycomposer/releases/ — manually written release notes.
 
-## Publish a release
+## Write a release note
 
-Create a new release note:
+Create a Markdown file under content/overlaycomposer/releases/, for example v1.2.3.md. Edit the front matter and body, then set draft = false.
 
-```sh
-hugo new content releases/v1.2.3.md
-```
+Release notes are not imported from GitHub Releases. This site publishes only the Markdown written here.
 
-Edit the generated Markdown file:
-
-- Set `title`, `date`, `version`, and `summary` in the front matter.
-- Add sections such as Highlights, Improvements, Bug fixes, and Downloads.
-- Set `draft = false` (or `draft: false`) when it is ready to publish.
-
-Commit and push to `main`. GitHub Actions builds the Hugo site and deploys it to GitHub Pages.
-
-## GitHub Pages
-
-In the repository settings, open **Pages** and set **Build and deployment → Source** to **GitHub Actions**.
-
-The site URL is https://compico.github.io/compico/.
+Push to main. GitHub Actions builds the site and deploys it to GitHub Pages.
+Site URL: https://compico.github.io/compico/
