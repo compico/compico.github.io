@@ -1,0 +1,20 @@
+# Compico / OverlayComposer
+
+> OverlayComposer shows all OBS stream widgets through one Browser Source, with a separate layout per OBS scene.
+> Each documentation page below also exists as raw Markdown (the same URL ending in index.md), without navigation or styling.
+
+## Start here
+- [Writing plugins: HTML widgets and standalone Go (WebAssembly) plugins](https://compico.github.io/overlaycomposer/docs/plugin-development/index.md): self-contained guide, enough to build a plugin from scratch
+
+## Documentation
+- [Getting started](https://compico.github.io/overlaycomposer/docs/getting-started/index.md)
+- [Connecting to OBS](https://compico.github.io/overlaycomposer/docs/obs-setup/index.md)
+- [Layouts and editor](https://compico.github.io/overlaycomposer/docs/layouts/index.md)
+- [Settings](https://compico.github.io/overlaycomposer/docs/settings/index.md)
+- [Deck: control panel for a tablet](https://compico.github.io/overlaycomposer/docs/deck/index.md)
+- [Widgets and plugins](https://compico.github.io/overlaycomposer/docs/plugins/index.md)
+- [Troubleshooting](https://compico.github.io/overlaycomposer/docs/troubleshooting/index.md)
+
+## Source
+- [OverlayComposer on GitHub](https://github.com/compico/overlaycomposer)
+- [Plugin catalog and examples: compico/oc-plugins](https://github.com/compico/oc-plugins)

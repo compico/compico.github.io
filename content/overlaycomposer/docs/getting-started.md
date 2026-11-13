@@ -1,16 +1,41 @@
 ---
 title: "Getting started"
-description: "Start OverlayComposer and open the visual editor."
+description: "Install OverlayComposer, open the editor, and build your first layout."
 weight: 1
 ---
 
-# Getting started
+OverlayComposer shows all your stream widgets through **one Browser Source** in OBS. You arrange the widgets in a visual editor, and every OBS scene gets its own layout.
 
-1. Download the latest build from [GitHub Releases](https://github.com/compico/overlaycomposer/releases).
-2. Run OverlayComposer. The app starts a local server and opens the editor in your browser.
-3. The editor is available at http://127.0.0.1:8000/editor by default.
-4. Add a source, arrange it on a layout, and save your changes.
+![The editor: layers on the left, the canvas in the middle, properties of the selected layer on the right](/overlaycomposer/img/index.png)
+*The editor. Dashed outlines are the widgets of the layout, the panel on the right shows the selected layer.*
 
-OverlayComposer runs locally on your computer. Its default address is 127.0.0.1:8000.
+## 1. Install and run
 
-Next: [Connect it to OBS](../obs-setup/) or learn about [layouts](../layouts/).
+1. Download the latest build for your system from [GitHub Releases](https://github.com/compico/overlaycomposer/releases): `overlay-composer-windows-amd64.exe` or `overlay-composer-linux-amd64`.
+2. Run it. On Windows there is no console window; the app lives in the system tray (the icon opens the editor, the data and log folders, and quits the app).
+3. The editor opens in your browser at `http://127.0.0.1:8000/editor`.
+
+The app runs entirely on your computer. A second launch does not start a second server, it just opens the editor again.
+
+> Windows SmartScreen may warn about an unsigned program: choose **More info → Run anyway**. SHA256 checksums are at the bottom of every release.
+
+## 2. Add the overlay to OBS
+
+In OBS add one **Browser Source** with the URL `http://127.0.0.1:8000/overlay`, with the width and height of your canvas (for example 1920 × 1080), to every scene where you want the overlay. Details are in [Connecting to OBS](../obs-setup/).
+
+## 3. Build a layout
+
+1. In the editor choose **+ Add Source**. The tabs are: a web page by URL (the same address you would put in a Browser Source), an already created source, ready-made widgets from plugins, and a local HTML file.
+2. Drag the widget on the canvas, resize it by the corners, rotate it by the handle, set opacity in the right panel.
+3. Press **Save (Ctrl+S)**.
+4. Bind the layout to OBS scenes with the checkboxes in the right panel, or mark it as the **default** layout for scenes that have none.
+
+Switch the scene in OBS and the overlay shows the matching layout.
+
+## Where to go next
+
+- [Connecting to OBS](../obs-setup/): obs-websocket, importing scenes from OBS.
+- [Layouts and editor](../layouts/): all editor controls.
+- [Settings](../settings/): remote devices, Twitch accounts, data folders.
+- [Deck](../deck/): switch scenes from a tablet.
+- [Widgets and plugins](../plugins/): the plugin store and your own widgets.

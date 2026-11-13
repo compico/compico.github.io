@@ -21,3 +21,11 @@ defaultContentLanguageInSubdir = false
 
 [outputs]
   home = ["HTML", "RSS"]
+
+# Сырой markdown: у страниц документации (см. cascade в content/overlaycomposer/docs/_index*.md) есть второй вывод —
+# .../<страница>/index.md. Его удобно отдавать ИИ-агенту ссылкой: без вёрстки и навигации.
+[outputFormats.Markdown]
+  mediaType = "text/markdown"
+  baseName = "index"
+  isPlainText = true
+  notAlternative = true
