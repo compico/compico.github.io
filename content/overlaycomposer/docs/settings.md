@@ -37,9 +37,10 @@ Sites opened through the proxy are third-party code. The proxy therefore listens
 
 Accounts are needed by plugins that read the chat and write to it, and for channel point rewards. Available only from this computer.
 
-1. Create an application at `dev.twitch.tv/console`: **Client Type: Confidential**, and add the OAuth Redirect URL shown in the settings (`http://localhost:<port>/auth/twitch/callback`).
-2. Enter the Client ID and Client Secret, **Save application**. Changing the Client ID disconnects the accounts.
-3. Press the copy icon next to **Streamer** (the channel owner) or **Bot** (optional account that writes to the chat). The authorization link goes to the clipboard and is valid for 10 minutes; open it in a browser where that Twitch account is signed in (a private window works for the second account).
+1. Press **Connect** next to **Streamer** (the channel owner) or **Bot** (optional account that writes to the chat). `twitch.tv/activate` opens with the code already filled in; confirm access in a browser where that Twitch account is signed in (use another browser or a private window for the second account). The settings page shows the account when Twitch confirms. You don't need to create your own Twitch application: Overlay Composer ships a built-in one (Public client, Device Code Grant Flow, no Client Secret).
+2. If an account is not used for 30 days, Twitch stops refreshing the Public app's token — just press **Connect** again.
+
+**Own application (optional).** Under *Use my own Twitch application (advanced)*: create an app at `dev.twitch.tv/console` (Category: Chat Bot). **Confidential** — add the OAuth Redirect URL shown in the settings (`http://localhost:<port>/auth/twitch/callback`), enter Client ID and Client Secret; accounts connect via a link (copy icon). **Public** — only the Client ID, connects by code like the built-in one. *Use the built-in application* switches back. Changing the application disconnects the accounts.
 
 Requested scopes: `chat:read` and `chat:edit`, and for the streamer also `channel:read:redemptions` and `channel:manage:redemptions`. If you connected the account earlier, the notification center asks to reconnect it.
 
