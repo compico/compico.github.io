@@ -92,3 +92,29 @@ body{background:var(--bg);color:var(--text)}
 .article-body hr{border:0;border-top:1px solid var(--line);margin:28px 0}
 .raw-link{margin:28px 0 0;font-size:12px}
 .raw-link a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+
+/* OverlayComposer landing */
+.oc-hero{padding:42px 0 30px}
+.oc-hero .back-link{display:inline-block;margin-bottom:34px}
+.oc-hero h1{font-size:clamp(38px,6vw,64px);letter-spacing:-3px;line-height:1.1;margin:16px 0 14px;font-weight:800}
+.oc-hero h1 span{color:#bcb6f5}
+.oc-facts{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:22px;font:11px var(--mono);color:var(--muted)}
+.oc-facts span::before{content:"✓ ";color:#7be2c0}
+.oc-shot{margin:38px 0 0;padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.oc-shot img,.oc-feature img{display:block;width:100%;height:auto;border-radius:7px}
+.oc-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.oc-col{padding:22px 24px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.oc-col h3{font-size:15px;margin:0 0 8px}
+.oc-col ul{margin:0;padding-left:20px;color:var(--muted);font-size:13px}.oc-col li{padding:4px 0}
+.oc-after{border-color:#5d5a87}.oc-after h3{color:#bcb6f5}
+.oc-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.oc-step{padding:22px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.oc-step>span{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#d6d2ff;color:#252431;font:700 13px var(--mono)}
+.oc-step h3{font-size:15px;margin:14px 0 6px}.oc-step p{font-size:13px;color:var(--muted);margin:0;line-height:1.7}
+.oc-note{margin:16px 0 0;color:var(--muted);font-size:13px}
+.oc-feature{display:grid;grid-template-columns:1fr 1.3fr;gap:34px;align-items:center;margin:0 0 34px}
+.oc-feature.oc-flip{grid-template-columns:1.3fr 1fr}.oc-feature.oc-flip .oc-text{order:2}
+.oc-feature img{border:1px solid var(--line)}
+.oc-text h3{font-size:22px;letter-spacing:-.6px;margin:0 0 10px}.oc-text p{color:var(--muted);font-size:14px;margin:0}
+.oc-chips{display:flex;flex-wrap:wrap;gap:8px}.oc-chips span{padding:6px 12px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:#c9cdd8;background:var(--panel)}
+@media(max-width:700px){.oc-compare,.oc-steps,.oc-feature,.oc-feature.oc-flip{grid-template-columns:1fr}.oc-feature.oc-flip .oc-text{order:0}.oc-hero h1{letter-spacing:-2px}}

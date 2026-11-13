@@ -32,6 +32,12 @@ In OBS add one **Browser Source** with the URL `http://127.0.0.1:8000/overlay`, 
 
 Switch the scene in OBS and the overlay shows the matching layout.
 
+## 4. Watch the FPS, and what to do if something is off
+
+The **fps-meter** plugin (**Add Source → Plugin store…**) is a widget that shows the FPS of the whole overlay right on the canvas, so you can see the numbers while you stream or play.
+
+If the overlay stutters or the FPS drops, try switching **Enable Browser Source Hardware Acceleration** in OBS (Settings → Advanced) and restart OBS: on some systems it helps when it is turned off, on others when it is turned on. More in [Troubleshooting](../troubleshooting/).
+
 ## Where to go next
 
 - [Connecting to OBS](../obs-setup/): obs-websocket, importing scenes from OBS.
