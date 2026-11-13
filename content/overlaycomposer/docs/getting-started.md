@@ -23,6 +23,8 @@ The app runs entirely on your computer. A second launch does not start a second 
 
 In OBS add one **Browser Source** with the URL `http://127.0.0.1:8000/overlay`, with the width and height of your canvas (for example 1920 × 1080), to every scene where you want the overlay. Details are in [Connecting to OBS](../obs-setup/).
 
+> **Already have scenes in OBS? You don't have to build everything from scratch.** Connect obs-websocket and use **Import from OBS**: your existing scenes become layouts, with every Browser Source as a layer of the same size and position. After that you only choose which layout is bound to which scene (the checkboxes in the right panel of the editor), and replace the old sources in OBS with the single overlay one.
+
 ## 3. Build a layout
 
 1. In the editor choose **+ Add Source**. The tabs are: a web page by URL (the same address you would put in a Browser Source), an already created source, ready-made widgets from plugins, and a local HTML file.
