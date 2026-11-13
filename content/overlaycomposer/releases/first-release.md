@@ -20,6 +20,12 @@ OverlayComposer was made to remove all of this: **one Browser Source in OBS, and
 ![The editor](/overlaycomposer/img/index.png)
 *The editor: layouts and layers on the left, the canvas in the middle, properties of the selected layer on the right.*
 
+## Low barrier to entry: bring your scenes with you
+
+You do not have to rebuild anything. Connect **obs-websocket**, press **Import from OBS**, and an existing scene becomes a layout: every Browser Source turns into a layer with the same size, position, rotation and order, groups and nested scenes included. Then replace the dozen sources in OBS with the single `/overlay` one, and you are done, in minutes rather than an evening.
+
+Twitch is just as easy: press **Connect**, confirm the code on `twitch.tv/activate`, and the streamer (or bot) account is connected. No own Twitch application, no Client ID or Secret to copy around.
+
 ## One source, a layout per scene
 
 Add `http://127.0.0.1:8000/overlay` to your scenes as a single Browser Source. OverlayComposer watches the active OBS scene and shows the matching layout; a scene without its own layout shows the default one.
@@ -86,7 +92,7 @@ The layout is built in the **Deck editor**: groups and tiles, drag and drop (als
 ## And more
 
 - **Other devices:** open the editor from a laptop or a tablet; the pairing code is one-time and changes every minute; paired devices can be revoked.
-- **Twitch accounts:** streamer and bot; the tokens never leave your computer and are never given to plugins.
+- **Twitch accounts:** streamer and bot, connected by a code with no own Twitch application; the tokens never leave your computer and are never given to plugins.
 - **Secrets are encrypted** (AES-256-GCM, DPAPI on Windows). Back up `config.json` together with `secret.key`.
 - **Tray, autostart, portable mode** (`--home`), Windows and Linux builds, a check for new versions without replacing files on its own, and a notification center.
 - **A debug page** `/overlay?debug=1`, readable logs and a hint for FPS drops while a game is running (the **fps-meter** plugin shows the numbers).
