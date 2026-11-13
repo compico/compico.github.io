@@ -383,7 +383,7 @@ A route handler gets `{"method","path","query":{…},"body":<json|null>}` and re
 
 Host operations (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Arguments are the JSON objects shown by the Go SDK functions above (for example `storage.set` takes `{"key","value"}`, `timer.set` takes `{"id","ms","repeat"}`, `chat.send` takes `{"text"}`).
 
-A Rust SDK (like `ocplugin` for Go) is planned; see the [issue](https://github.com/compico/overlaycomposer/issues). Rust plugins on the same ABI weigh about 100 KB.
+A Rust SDK (like `ocplugin` for Go) is planned; see the [issue #136](https://github.com/compico/overlaycomposer/issues/136). Rust plugins on the same ABI weigh about 100 KB.
 
 ---
 

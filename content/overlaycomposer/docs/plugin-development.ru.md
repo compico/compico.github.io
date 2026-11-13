@@ -383,7 +383,7 @@ func TestGreet(t *testing.T) {
 
 Операции хоста (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Аргументы — JSON-объекты, которые строят функции Go SDK выше (например, `storage.set` принимает `{"key","value"}`, `timer.set` — `{"id","ms","repeat"}`, `chat.send` — `{"text"}`).
 
-SDK для Rust (как `ocplugin` для Go) запланирован; см. [issue](https://github.com/compico/overlaycomposer/issues). Плагины на Rust на том же ABI весят около 100 КБ.
+SDK для Rust (как `ocplugin` для Go) запланирован; см. [issue #136](https://github.com/compico/overlaycomposer/issues/136). Плагины на Rust на том же ABI весят около 100 КБ.
 
 ---
 
