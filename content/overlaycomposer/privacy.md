@@ -24,7 +24,7 @@ Plugins and widget sources written by other people are separate software, not pa
 
 ## Google Drive backup
 
-The backup feature saves a settings file to a folder named “Overlay Composer” in **your** Google Drive and reads it back when you ask. It uses the `drive.file` permission: the program can see and change only the files it created itself, and cannot see anything else in your Drive.
+The backup feature saves settings files to the hidden application data folder of **your** Google Drive and reads them back when you ask. It uses the `drive.appdata` permission: this folder is not shown among your Drive files and can be read only by this app, and the program cannot see anything else in your Drive. You can delete the saved data at any time in Google Drive settings → Manage apps.
 
 - Files travel directly between your computer and Google. They do not pass through any server of the developer.
 - The only Google data the program stores is an OAuth refresh token, kept encrypted on your computer. “Disconnect” in the same screen deletes it. You can also revoke access at any time in your [Google Account permissions](https://myaccount.google.com/permissions).
