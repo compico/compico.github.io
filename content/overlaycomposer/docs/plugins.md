@@ -41,7 +41,17 @@ A widget is third-party code. It runs in a sandboxed iframe with no access to th
 
 Besides widgets there are **standalone** plugins: one `.wasm` file that runs inside the app, with no window of its own. It answers HTTP requests, receives events (for example a channel point reward), stores data, writes to the chat as the bot, publishes events to other programs, and can bring its own widgets and a settings page.
 
-Install: download `<id>.wasm` from the plugin's release (for [compico/oc-plugins](https://github.com/compico/oc-plugins/releases) the tags are `<id>-v<version>`) and put it into the plugins folder, or install it from the store. Then open **🧩 Plugins** in the header: **Rescan** picks up new files, and the plugin card lets you grant permissions, edit settings and restart it.
+Install: open **🧩 Plugins** in the header and go to the **Store** tab. It lists the standalone plugins of the repositories you added; **Install** downloads the release and checks that the file is exactly the published one. You can also download `<id>.wasm` from the plugin's release (for [compico/oc-plugins](https://github.com/compico/oc-plugins/releases) the tags are `<id>-v<version>`) and put it into the plugins folder; **Rescan** picks up new files. In the **Installed** tab the plugin card lets you grant permissions, edit settings and restart it.
+
+A new plugin gets **no permissions** until you tick them.
+
+### Updates and rollback
+
+- On start and by a button the app checks installed plugins; a new version appears in the notification center (the bell). Nothing is installed by itself.
+- Before updating the window shows the changes of **every** version you skipped and, where the author wrote it, **What to do after updating**. If the new version asks for more permissions, they are listed and stay **not granted** until you grant them.
+- You can pick any version: the latest, a range such as `^1.5`, or an exact one. Going back to an older version is possible; the newer one may have changed the plugin's saved data, so the window warns you.
+- **Export lock** saves the list of installed plugins with exact versions, **Restore from lock…** installs the same set on another computer after showing a plan. Files, permissions and settings are not in it. (The same list is part of the settings backup.)
+- A plugin marked **Deprecated** has been replaced by its author; the card shows the reason and a button to the replacement.
 
 ![Settings page of the music requests plugin](/overlaycomposer/img/plugin-settings.png)
 *The settings page of the `music` plugin (track requests for channel points): the reward, the player, the queue and the ban list.*
@@ -53,7 +63,9 @@ Install: download `<id>.wasm` from the plugin's release (for [compico/oc-plugins
 | `twitch.redemption` | receive reward redemptions and fulfil or cancel them |
 | `timer` | host timers |
 | `events.publish` | publish events to subscribers |
-| `chat.send` | write to the chat of the streamer's channel as the bot |
+| `chat.send` | write to the chat of the streamer's channel as the bot, also as a reply to a message |
+| `chat.command.read` | receive the chat commands (`!np`…) that the plugin lists; the permission window shows exactly which. The rest of the chat stays hidden |
+| `net.local` | talk to a program on this computer at the addresses the plugin lists (for example `127.0.0.1:24050`); the window shows them |
 
 Giving or changing permissions restarts the plugin. A plugin that crashes 5 times in a minute is stopped until you restart it. Everything the plugin logs goes to the app log tagged `plugin=<id>`.
 

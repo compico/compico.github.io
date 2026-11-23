@@ -110,7 +110,7 @@ oc.storage.onChange((c) => { if (c.key === "tasks") render(c.value || []); });
 
 ### Публикация
 
-Положи плагин в репозиторий GitHub как `plugins/<id>/` (с `plugin.json` и файлом входа) и поделись адресом репозитория: пользователи добавляют его в **Add Source → Plugin store…**. Примеры — [compico/oc-plugins](https://github.com/compico/oc-plugins) (`osu-np`, `fps-meter`). Файл `changelog.json` рядом с `plugin.json` показывается пользователям после обновления: `[{ "version": "1.2.0", "date": "2026-10-27", "changes": ["что нового"], "migration": "что сделать после обновления" }]`.
+Положи плагин в репозиторий GitHub как `plugins/<id>/` (с `plugin.json` и файлом входа) и поделись адресом репозитория: пользователи добавляют его в **Add Source → Plugin store…**. Пример — [compico/oc-plugins](https://github.com/compico/oc-plugins) (`fps-meter`). Если виджет заменён другим плагином, сообщите об этом файлом `deprecated.json` (см. «Публикация автономного плагина»). Файл `changelog.json` рядом с `plugin.json` показывается пользователям после обновления: `[{ "version": "1.2.0", "date": "2026-10-27", "changes": ["что нового"], "migration": "что сделать после обновления" }]`.
 
 ---
 
@@ -206,7 +206,8 @@ p.POST("/add", func(c *ocplugin.Ctx) error {
 | `net.http` (`PermNetHTTP`) | `Fetch(id, FetchRequest{Method, URL, Body})`, `p.OnHTTPResponse(id, f)` | только `http(s)`; тело запроса до 256 КБ, ответ до 1 МБ, 15 с, 8 одновременно, до 3 редиректов; **адреса loopback, частных сетей, link-local и CGNAT запрещены** |
 | `twitch.redemption` (`PermRedeem`) | `p.OnRedemption(f)`, `FulfillRedemption(rewardID, id)`, `CancelRedemption(rewardID, id)` | награды за баллы канала; отмена возвращает баллы |
 | `events.publish` (`PermPublish`) | `Publish(topic, v)`, `PublishRetained(topic, v)` | события для виджетов, аддонов и Deck |
-| `chat.send` (`PermChat`) | `Say(text)` | сообщение в канале стримера **от имени бота**: до 300 символов, всплеск 3, затем одно в 3 с; канал и аккаунт выбирает хост |
+| `chat.send` (`PermChat`) | `Say(text)`, `SayReply(messageID, text)` | сообщение в канале стримера **от имени бота** (`SayReply` — ответом на сообщение): до 300 символов, всплеск 3, затем одно в 3 с; канал и аккаунт выбирает хост |
+| `chat.command.read` (`PermChatCommandRead`) | `p.OnChatCommand(f)`, `Meta.Commands` | команды чата вроде `!np`; остальной чат плагину недоступен (см. ниже) |
 
 Неудавшаяся операция возвращает `error` (например, `permission denied`).
 
@@ -257,6 +258,30 @@ p.OnRedemption(func(r ocplugin.Redemption) {
 
 У `Redemption` есть поля `ID, RewardID, RewardTitle, UserID, UserLogin, UserName, Input, Status, RedeemedAt`. Награда должна быть **создана самой программой** (в настройках плагина: **New reward…**), иначе Twitch не даст менять её статус. Программа сама подписывается на EventSub Twitch, пока у включённого плагина есть разрешение `twitch.redemption`; повторные доставки одного погашения отбрасываются по id.
 
+### Команды чата
+
+Плагин может отвечать на команды вроде `!np`. Чат ему **не** выдаётся: он объявляет нужные команды и получает только их.
+
+```go
+p := ocplugin.New(ocplugin.Meta{
+	ID: "np", Name: "Now playing", Version: "0.1.0",
+	Permissions: []string{ocplugin.PermChatCommandRead, ocplugin.PermChat},
+	Commands:    []string{"np"}, // без "!": строчные a-z, 0-9, _, до 32 символов, не более 16 команд
+})
+p.OnChatCommand(func(c ocplugin.ChatCommand) {
+	if c.Command != "np" {
+		return
+	}
+	_ = ocplugin.SayReply(c.MessageID, "Now playing: …") // Twitch покажет ответом на сообщение; нужно chat.send
+})
+```
+
+- Нужны разрешение `chat.command.read` (`PermChatCommandRead`) и непустой `Meta.Commands`. Вызов `OnChatCommand` подписывает плагин на `chat.command`. `Commands` без подписки отклоняется.
+- Хост читает чат канала по умолчанию и выбирает сообщения, где `!` стоит сразу перед именем команды: `!np` и `!info @compico` — команды, а `! np`, `!!np` и `!привет` — нет. Сообщения `/me` и сообщения самого бота командами не считаются.
+- В `ChatCommand`: `Command` (строчными, без `!`), `Args` (слова после команды, до 16 по 200 символов, регистр сохранён), `Channel`, `UserID`, `User`, `DisplayName`, `MessageID`, `IsBroadcaster`, `IsMod`, `IsVip`, `IsSub`, `Timestamp` (мс).
+- **Аргументы и ники — текст зрителей, им нельзя доверять.** Кто может вызвать команду (`IsMod`, `IsSub`…) и как часто, решает сам плагин.
+- `SayReply(messageID, text)` — это `Say` с id сообщения, на которое отвечаем; ограничения `chat.send` те же.
+
 ### Настройки (configSchema)
 
 `Meta.ConfigSchema` описывает форму, которую показывает программа: поля типа `string`, `integer`/`number`, `boolean` с `title` и `description`. `"format": "twitch.reward"` даёт выбор награды. Значения читай через `p.Config(&struct{...})` (доступно с `OnInit`); сохранение настроек перезапускает плагин.
@@ -275,6 +300,24 @@ Events: []ocplugin.EventDecl{{ID: "now", Name: "Now playing"}, {ID: "commands"}}
 
 - виджет или страница настроек того же плагина: `oc.plugin.subscribe("now", (data, meta) => …)`, где `meta` — `{topic, seq, retained}`;
 - внешняя программа: WebSocket `ws://127.0.0.1:8000/plugins/<id>/ws`. Кадры — текстовый JSON: отправь `{"t":"sub","topic":"now"}`, получай `{"t":"event","topic":"now","data":…,"seq":7,"retained":true}`; время от времени шли `{"t":"ping"}` и переподключайся при потере связи (после `sub` retained-значение приходит снова). Допустимые origin: пустой, тот же хост, `music-application://desktop`.
+
+### Кнопки для Deck
+
+Плагин может предложить готовые действия для плиток [Deck](../deck/). Редактор Deck показывает их в списке **What it does**. Нажатие плитки заставляет приложение вызвать **объявленный плагином** маршрут с **объявленным плагином** телом. Устройство с панелью называет только плагин и действие, поэтому попросить плагин о чём-то другом оно не может.
+
+```go
+ocplugin.Meta{ID: "music", Name: "Music", Version: "1.0.0", Actions: []ocplugin.Action{
+	{ID: "toggle", Title: "Play / pause", Icon: "play", Path: "/control", Body: []byte(`{"action":"toggle"}`)},
+	{ID: "skip-ban", Title: "Skip and ban", Icon: "ban", Path: "/control", Body: []byte(`{"action":"skip_ban"}`), Danger: true},
+}}
+```
+
+- `ID`: a-z, 0-9, `_`, `-`, до 32 символов, уникален в плагине. `Title`: до 40 символов, подпись по умолчанию. `Icon`: значок Deck (`play`, `pause`, `next`, `ban`, `scene`, `home`, `mic`).
+- `Method` (по умолчанию `POST`) и `Path` должны быть маршрутом, который плагин объявил (`p.POST("/control", …)`), иначе плагин не запустится. `Body` — готовый JSON до 1 КБ. До 32 действий.
+- `Danger: true` для необратимого или заметного зрителям: плитка по умолчанию просит второе касание.
+- `ActiveWhen` подсвечивает плитку по состоянию плагина: `{Topic, Field?, Equals?}`. `Topic` — топик событий, объявленный в `Meta.Events`; `Field` — путь вида `a.b` к полю объекта события (пусто — само значение); `Equals` — строка, число или bool для сравнения (без него плитка горит при «истинном» значении). Пример: `ActiveWhen: &ocplugin.ActiveWhen{Topic: "now", Field: "playing", Equals: json.RawMessage(`true`)}`. Приложение само подписывается на топик, пока плитка есть на Deck, и берёт последнее значение, в том числе retained; у остановленного плагина плитки не подсвечиваются.
+- `Display` выводит на плитку текст из событий: `{Topic, Fields}`, до 4 путей `a.b`. Каждое поле даёт строку (строка как есть, число — числом, массив строк — через запятую, пустые пропускаются, до 80 символов); первая строка жирная. Подходит для крупной плитки «сейчас играет»: `Display: &ocplugin.Display{Topic: "now", Fields: []string{"now.title", "now.artists"}}`.
+- Если маршрут ответил статусом 400 и выше, плитка покажет `{"error":"…"}` короткой фразой (до 120 символов): не кладите в неё пути и подробности.
 
 ### Интерфейс внутри .wasm: виджеты и страница настроек
 
@@ -307,6 +350,32 @@ go run ./cmd/ocpack list hello.wasm
 `oc.plugin.call/get/post` идут через страницу оверлея, а не через `fetch` из песочницы; они достают только маршруты, объявленные **этим** плагином (до 8 одновременных вызовов, 15 с). Предпросмотр редактора тоже вызывает плагин (`oc.ready` даёт `info.preview === true`): не отправляй из предпросмотра действия, меняющие состояние. На странице настроек доступны также `oc.storage.*` (с разрешением `storage`) и те же `oc.plugin.*`.
 
 Каждая страница плагина отдаётся с `Content-Security-Policy: sandbox allow-scripts`; к API программы она обратиться не может.
+
+### Настройки виджета
+
+У виджета могут быть свои настройки: у каждого источника на сцене они свои, редактор строит по ним форму (в том числе выпадающий список), а виджет получает значения как `?key=value`. Формат тот же, что у `settings` в `plugin.json` HTML-плагина (типы `string`, `text`, `number`, `range`, `bool`, `color`, `font`, `select`), до 32 настроек на виджет:
+
+```go
+Widgets: []ocplugin.Widget{{ID: "graph", Name: "Graph", Entry: "index.html", Settings: []ocplugin.WidgetSetting{
+	{Key: "style", Label: "Style", Type: "select", Default: "ribbon",
+		Options: []ocplugin.SettingOption{{Value: "ribbon", Label: "Ribbon"}, {Value: "bars", Label: "Bars"}}},
+}}},
+```
+
+В виджете: `oc.param("style", "ribbon")`. Редактор сохраняет только изменённые значения, поэтому умолчание должно быть и в коде виджета. `configSchema` остаётся для общего для всего плагина (адреса, токены).
+
+### Программа на этом компьютере (net.local)
+
+`net.http` ходит только в интернет. Если плагину нужна программа на этом же компьютере (например, tosu отдаёт файлы карт на `127.0.0.1:24050`), объявите её и попросите `net.local`:
+
+```json
+"permissions": ["net.local"],
+"netLocal": [{"target": "127.0.0.1:24050", "setting": "tosuHost", "paths": ["/files/beatmap/"]}]
+```
+
+`target` — `host:port` на этом компьютере (`127.0.0.1`, `localhost` или `[::1]`, до 4); `setting` — необязательное имя строковой настройки, чтобы пользователь мог сменить адрес; `paths` — необязательные префиксы пути. `http.fetch` на объявленный адрес требует именно `net.local` (`net.http` его не заменяет), идёт по `http`, без редиректов, ответ может быть до 8 МБ. Любой другой локальный адрес остаётся закрыт, а пользователь видит, к каким адресам плагин получит доступ.
+
+Локальные программы часто не пускают websocket из виджета в песочнице (браузер шлёт `Origin: null`), а опрос через `Fetch` будит `.wasm` на каждый запрос. Для этого в `netLocal[].streams` можно объявить поток: `{"path": "/websocket/v2", "topic": "live", "fields": {"time": "beatmap.time.live"}, "minIntervalMs": 250}`. Хост сам подключается, только пока у топика есть подписчики, берёт из каждого JSON-кадра перечисленные `fields` и публикует их в топик (он объявлен в `events`, последнее значение хранится); виджет читает его через `oc.plugin.subscribe`, а `.wasm` не вызывается. До 2 потоков на плагин и 16 полей на поток.
 
 ### Тесты
 
@@ -346,7 +415,10 @@ func TestGreet(t *testing.T) {
 
 - `node scripts/wasm.mjs build <id>` выполняет `go vet`, `go test`, собирает `dist/<id>.wasm` (упаковывая `ui/` через `ocpack`) и печатает метаданные, прочитанные из файла. `npm test` проверяет все манифесты.
 - Поднимай `Version` при каждом изменении кода. После merge в `main` CI создаёт релиз `<id>-v<версия>` с `<id>.wasm` и sha256; PR, который меняет код без повышения версии, не проходит проверку.
-- Пользователи ставят файл из релиза (см. [Виджеты и плагины](../plugins/)).
+- В релизе пять файлов: `<id>.wasm`, `<id>.wasm.sha256`, `<id>.json` (id, версия, sha256, размер и метаданные, прочитанные из файла) и `<id>.changelog.json`. По ним строится каталог магазина; черновики и предрелизы пропускаются.
+- **Журнал изменений.** `wasm/<id>/changelog.json` — тот же формат, что у HTML-плагина: `[{ "version": "1.2.0", "date": "2026-11-17", "changes": ["что нового"], "migration": "что сделать после обновления" }]`. Перед обновлением пользователь видит записи **всех** пропущенных версий, поэтому пишите каждую версию так, чтобы её можно было прочесть отдельно; `migration` показывается как **What to do after updating**.
+- **Вывод плагина из обращения.** Чтобы сообщить, что плагин заменён, добавьте в корень репозитория `deprecated.json`: `[{"id": "osu-skills", "kind": "wasm", "since": "2026-11-17", "reason": "почему и что делать", "replacedBy": {"id": "osu-tools", "kind": "wasm", "repo": "compico/oc-plugins", "url": "https://…"}}]`. `kind` — `widget` для плагинов магазина или `wasm` для автономных; `since` и `replacedBy` необязательны; `url` только https. У тех, кто плагин уже поставил, появится пометка **Deprecated** с причиной, кнопка на замену и заметка в колокольчике. Запись работает и после удаления плагина из репозитория и читается только у источников, которые добавил сам пользователь.
+- Пользователи ставят плагин во вкладке **Store** окна **Plugins** или копируют файл вручную (см. [Виджеты и плагины](../plugins/)). Магазин сверяет sha256, показывает новые права и сам их не выдаёт.
 
 ---
 
@@ -369,19 +441,21 @@ func TestGreet(t *testing.T) {
 ```json
 {
   "id": "music", "name": "Music requests", "version": "0.1.0", "apiVersion": 1,
-  "permissions": ["storage", "timer", "net.http", "twitch.redemption", "events.publish", "chat.send"],
-  "subscriptions": ["twitch.redemption"],
+  "permissions": ["storage", "timer", "net.http", "twitch.redemption", "events.publish", "chat.send", "chat.command.read"],
+  "subscriptions": ["twitch.redemption", "chat.command"],
+  "commands": ["np"],
   "routes": [{"method": "GET", "path": "/next", "handler": "next"}],
   "events": [{"id": "now", "name": "Now playing"}],
+  "actions": [{"id": "toggle", "title": "Play / pause", "icon": "play", "path": "/control", "body": {"action": "toggle"}}],
   "widgets": [{"id": "queue", "name": "Queue", "entry": "queue.html", "width": 360, "height": 240}],
   "settings": "settings.html",
   "configSchema": {"rewardId": {"type": "string", "format": "twitch.reward", "title": "Reward"}}
 }
 ```
 
-Обработчик маршрута получает `{"method","path","query":{…},"body":<json|null>}` и возвращает `{"status":200,"body":<json>}`. События приходят в обработчик с именем `on_event` как `{"type","data"}`: `twitch.redemption`, `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`).
+Обработчик маршрута получает `{"method","path","query":{…},"body":<json|null>}` и возвращает `{"status":200,"body":<json>}`. События приходят в обработчик с именем `on_event` как `{"type","data"}`: `twitch.redemption`, `chat.command` (объект `ChatCommand` выше; нужны подписка, разрешение и `commands`), `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`). `actions` и `commands` — те же объекты, что строят `Meta.Actions` и `Meta.Commands`.
 
-Операции хоста (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Аргументы — JSON-объекты, которые строят функции Go SDK выше (например, `storage.set` принимает `{"key","value"}`, `timer.set` — `{"id","ms","repeat"}`, `chat.send` — `{"text"}`).
+Операции хоста (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Аргументы — JSON-объекты, которые строят функции Go SDK выше (например, `storage.set` принимает `{"key","value"}`, `timer.set` — `{"id","ms","repeat"}`, `chat.send` — `{"text","replyTo"?}`).
 
 SDK для Rust (как `ocplugin` для Go) запланирован; см. [issue #136](https://github.com/compico/overlaycomposer/issues/136). Плагины на Rust на том же ABI весят около 100 КБ.
 
@@ -394,4 +468,6 @@ SDK для Rust (как `ocplugin` для Go) запланирован; см. [i
 3. Состояние держи в хранилище; не полагайся на переменные и фоновую работу; на маршруты отвечай сразу.
 4. Любой текст зрителя (`Redemption.Input`, сообщения чата) считай недоверенным; не собирай из него HTML через `innerHTML`.
 5. Поднимай версию при каждом изменении.
-6. Собери (`GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o <id>.wasm .`), установи, выдай разрешения в **🧩 Plugins**, проверь лог (`plugin=<id>`).
+6. Команды чата — текст чужих людей: проверяй, кто может их вызывать (`IsMod`, `IsSub`) и как часто. Действиям для Deck ставь `Danger`, если их видят зрители или их нельзя отменить.
+7. Пиши `changelog.json` к каждой версии; там, где меняются сохранённые данные или настройки, добавляй `migration`.
+8. Собери (`GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o <id>.wasm .`), установи, выдай разрешения в **🧩 Plugins**, проверь лог (`plugin=<id>`).

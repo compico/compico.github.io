@@ -110,7 +110,7 @@ A widget runs in an iframe with `sandbox="allow-scripts allow-forms allow-popups
 
 ### Publish
 
-Put the plugin into a GitHub repository as `plugins/<id>/` (with `plugin.json` and the entry file) and share the repository address: users add it in **Add Source → Plugin store…**. See [compico/oc-plugins](https://github.com/compico/oc-plugins) for examples (`osu-np`, `fps-meter`). A `changelog.json` next to `plugin.json` is shown to users after an update: `[{ "version": "1.2.0", "date": "2026-10-27", "changes": ["what is new"], "migration": "what to do after updating" }]`.
+Put the plugin into a GitHub repository as `plugins/<id>/` (with `plugin.json` and the entry file) and share the repository address: users add it in **Add Source → Plugin store…**. See [compico/oc-plugins](https://github.com/compico/oc-plugins) for an example (`fps-meter`). If a widget is replaced by another plugin, say so in a `deprecated.json` file (see *Publish a standalone plugin*). A `changelog.json` next to `plugin.json` is shown to users after an update: `[{ "version": "1.2.0", "date": "2026-10-27", "changes": ["what is new"], "migration": "what to do after updating" }]`.
 
 ---
 
@@ -206,7 +206,8 @@ Declare permissions in `Meta.Permissions`; the user grants them.
 | `net.http` (`PermNetHTTP`) | `Fetch(id, FetchRequest{Method, URL, Body})`, `p.OnHTTPResponse(id, f)` | `http(s)` only; request body up to 256 KB, response up to 1 MB, 15 s, 8 at a time, up to 3 redirects; **loopback, private, link-local and CGNAT addresses are blocked** |
 | `twitch.redemption` (`PermRedeem`) | `p.OnRedemption(f)`, `FulfillRedemption(rewardID, id)`, `CancelRedemption(rewardID, id)` | channel point rewards; cancelling refunds the points |
 | `events.publish` (`PermPublish`) | `Publish(topic, v)`, `PublishRetained(topic, v)` | events for widgets, add-ons and the Deck |
-| `chat.send` (`PermChat`) | `Say(text)` | a message in the streamer's channel **as the bot**: up to 300 characters, burst 3 then 1 per 3 s; the host chooses channel and account |
+| `chat.send` (`PermChat`) | `Say(text)`, `SayReply(messageID, text)` | a message in the streamer's channel **as the bot** (`SayReply` as a reply to a message): up to 300 characters, burst 3 then 1 per 3 s; the host chooses channel and account |
+| `chat.command.read` (`PermChatCommandRead`) | `p.OnChatCommand(f)`, `Meta.Commands` | chat commands such as `!np`; the rest of the chat stays hidden (see below) |
 
 A failed operation returns an `error` (for example `permission denied`).
 
@@ -257,6 +258,30 @@ p.OnRedemption(func(r ocplugin.Redemption) {
 
 `Redemption` has `ID, RewardID, RewardTitle, UserID, UserLogin, UserName, Input, Status, RedeemedAt`. The reward must be **created by the app** (in the plugin settings: **New reward…**), otherwise Twitch refuses to change its status. The app subscribes to Twitch EventSub automatically while an enabled plugin has the `twitch.redemption` permission; repeated deliveries of the same redemption are dropped by id.
 
+### Chat commands
+
+A plugin can answer commands such as `!np`. It is **not** given the chat: it declares the commands it wants and receives only those.
+
+```go
+p := ocplugin.New(ocplugin.Meta{
+	ID: "np", Name: "Now playing", Version: "0.1.0",
+	Permissions: []string{ocplugin.PermChatCommandRead, ocplugin.PermChat},
+	Commands:    []string{"np"}, // without "!": lowercase a-z, 0-9, _, up to 32 characters, up to 16 commands
+})
+p.OnChatCommand(func(c ocplugin.ChatCommand) {
+	if c.Command != "np" {
+		return
+	}
+	_ = ocplugin.SayReply(c.MessageID, "Now playing: …") // shown by Twitch as a reply; needs chat.send
+})
+```
+
+- Needs the `chat.command.read` permission (`PermChatCommandRead`) and a non-empty `Meta.Commands`. Setting `OnChatCommand` subscribes the plugin to `chat.command`. `Commands` without the subscription is rejected.
+- The host reads the chat of the default channel and picks messages that start with `!` right before the command name: `!np` and `!info @compico` are commands, `! np`, `!!np` and `!привет` are not. `/me` messages and the bot's own messages are never commands.
+- `ChatCommand` has `Command` (lowercase, no `!`), `Args` (the words after it, up to 16 of 200 characters, case kept), `Channel`, `UserID`, `User`, `DisplayName`, `MessageID`, `IsBroadcaster`, `IsMod`, `IsVip`, `IsSub`, `Timestamp` (ms).
+- **Arguments and nicknames are viewer text: do not trust them.** The plugin itself decides who may call a command (`IsMod`, `IsSub`…) and how often.
+- `SayReply(messageID, text)` is `Say` with the id of the message to reply to; the limits of `chat.send` stay the same.
+
 ### Settings (configSchema)
 
 `Meta.ConfigSchema` describes the form shown by the app: fields of type `string`, `integer`/`number`, `boolean`, with `title` and `description`. `"format": "twitch.reward"` makes a reward picker. Read the values with `p.Config(&struct{...})` (available from `OnInit`); saving the settings restarts the plugin.
@@ -275,6 +300,24 @@ Subscribers:
 
 - a widget or settings page of the same plugin: `oc.plugin.subscribe("now", (data, meta) => …)`, where `meta` is `{topic, seq, retained}`;
 - an external program: WebSocket `ws://127.0.0.1:8000/plugins/<id>/ws`. Frames are JSON text: send `{"t":"sub","topic":"now"}`, receive `{"t":"event","topic":"now","data":…,"seq":7,"retained":true}`; send `{"t":"ping"}` now and then and reconnect on loss (the retained value comes again after `sub`). Allowed origins: none, the same host, `music-application://desktop`.
+
+### Buttons for the Deck
+
+A plugin can offer ready-made actions for tiles of the [Deck](../deck/). The Deck editor lists them under **What it does**. Pressing the tile makes the app call the route **declared by the plugin** with the body **declared by the plugin**. The device with the panel names only the plugin and the action, so it cannot ask the plugin for anything else.
+
+```go
+ocplugin.Meta{ID: "music", Name: "Music", Version: "1.0.0", Actions: []ocplugin.Action{
+	{ID: "toggle", Title: "Play / pause", Icon: "play", Path: "/control", Body: []byte(`{"action":"toggle"}`)},
+	{ID: "skip-ban", Title: "Skip and ban", Icon: "ban", Path: "/control", Body: []byte(`{"action":"skip_ban"}`), Danger: true},
+}}
+```
+
+- `ID`: a-z, 0-9, `_`, `-`, up to 32 characters, unique in the plugin. `Title`: up to 40 characters, the default label. `Icon`: a Deck icon (`play`, `pause`, `next`, `ban`, `scene`, `home`, `mic`).
+- `Method` (default `POST`) and `Path` must be a route the plugin declares (`p.POST("/control", …)`), otherwise the plugin does not start. `Body` is ready JSON up to 1 KB. Up to 32 actions.
+- `Danger: true` for what cannot be undone or is visible to viewers: the tile asks for a second tap by default.
+- `ActiveWhen` lights the tile by plugin state: `{Topic, Field?, Equals?}`. `Topic` is an event topic the plugin declares in `Meta.Events`; `Field` is a path like `a.b` into the event object (empty means the value itself); `Equals` is a string, number or bool to compare with (without it the tile is lit when the value is truthy). Example: `ActiveWhen: &ocplugin.ActiveWhen{Topic: "now", Field: "playing", Equals: json.RawMessage(`true`)}`. The app subscribes to the topic by itself while the tile is on the Deck and uses the last value, retained ones included; a stopped plugin never lights its tiles.
+- `Display` puts text on a tile from events: `{Topic, Fields}` with up to 4 paths `a.b`. Every field becomes a line (a string as is, a number as a number, an array of strings joined by commas, empty ones skipped, up to 80 characters); the first line is bold. Good for a big tile with *now playing*: `Display: &ocplugin.Display{Topic: "now", Fields: []string{"now.title", "now.artists"}}`.
+- If the route answers with a status of 400 or more, the tile shows `{"error":"…"}` as a short phrase (up to 120 characters): keep paths and details out of it.
 
 ### UI inside the .wasm: widgets and a settings page
 
@@ -307,6 +350,32 @@ Pages are served at `/plugins/<id>/ui/<path>` (relative links like `app.js` work
 `oc.plugin.call/get/post` go through the overlay page, not through `fetch` from the sandbox; they reach only routes declared by **this** plugin (up to 8 concurrent calls, 15 s). The editor preview calls the plugin too (`oc.ready` gives `info.preview === true`): do not send state-changing actions from a preview. The settings page also has `oc.storage.*` (with the `storage` permission) and the same `oc.plugin.*`.
 
 Every plugin page is served with `Content-Security-Policy: sandbox allow-scripts`; it cannot reach the app API.
+
+### Widget settings
+
+A widget can have its own settings: every source on a scene gets its own values, the editor builds the form (including a drop-down list), and the widget receives the values as `?key=value`. The format is the same as `settings` in the `plugin.json` of an HTML plugin (types `string`, `text`, `number`, `range`, `bool`, `color`, `font`, `select`), up to 32 settings per widget:
+
+```go
+Widgets: []ocplugin.Widget{{ID: "graph", Name: "Graph", Entry: "index.html", Settings: []ocplugin.WidgetSetting{
+	{Key: "style", Label: "Style", Type: "select", Default: "ribbon",
+		Options: []ocplugin.SettingOption{{Value: "ribbon", Label: "Ribbon"}, {Value: "bars", Label: "Bars"}}},
+}}},
+```
+
+In the widget: `oc.param("style", "ribbon")`. The editor stores only changed values, so the default must be in the widget code too. `configSchema` stays for what is shared by the whole plugin (addresses, tokens).
+
+### A program on this computer (net.local)
+
+`net.http` reaches only the internet. If the plugin needs a program on the same computer (for example tosu serves map files on `127.0.0.1:24050`), declare it and ask for `net.local`:
+
+```json
+"permissions": ["net.local"],
+"netLocal": [{"target": "127.0.0.1:24050", "setting": "tosuHost", "paths": ["/files/beatmap/"]}]
+```
+
+`target` is `host:port` on this computer (`127.0.0.1`, `localhost` or `[::1]`, up to 4); `setting` is an optional name of a string setting so that the user can change the address; `paths` are optional path prefixes. `http.fetch` to a declared address needs exactly `net.local` (`net.http` does not replace it), goes over `http`, follows no redirects and may return up to 8 MB. Any other local address stays closed, and the user sees which addresses the plugin gets.
+
+A local program often refuses a websocket from a sandboxed widget (the browser sends `Origin: null`), and polling over `Fetch` wakes the `.wasm` on every request. For this a stream can be declared in `netLocal[].streams`: `{"path": "/websocket/v2", "topic": "live", "fields": {"time": "beatmap.time.live"}, "minIntervalMs": 250}`. The host connects by itself, only while the topic has subscribers, takes the listed `fields` from every JSON frame and publishes them to the topic (declared in `events`, with the last value kept); the widget reads it with `oc.plugin.subscribe` and the `.wasm` is not called. Up to 2 streams per plugin and 16 fields per stream.
 
 ### Tests
 
@@ -346,7 +415,10 @@ In [compico/oc-plugins](https://github.com/compico/oc-plugins) (or your own repo
 
 - `node scripts/wasm.mjs build <id>` runs `go vet`, `go test`, builds `dist/<id>.wasm` (packing `ui/` with `ocpack`) and prints the metadata read from the file. `npm test` validates every manifest.
 - Raise `Version` for every code change. After merge to `main` CI creates a release `<id>-v<version>` with `<id>.wasm` and a sha256; a PR that changes code without raising the version fails the check.
-- Users install the file from the release (see [Widgets and plugins](../plugins/)).
+- The release holds five files: `<id>.wasm`, `<id>.wasm.sha256`, `<id>.json` (id, version, sha256, size and the metadata read from the file) and `<id>.changelog.json`. The store catalog is built from them; drafts and pre-releases are skipped.
+- **Changelog.** `wasm/<id>/changelog.json` has the same format as the one of an HTML plugin: `[{ "version": "1.2.0", "date": "2026-11-17", "changes": ["what is new"], "migration": "what to do after updating" }]`. Before an update the user sees the entries of **all** skipped versions, so write each version as if it were read alone; `migration` is shown as **What to do after updating**.
+- **Retiring a plugin.** To say that a plugin is replaced, add a `deprecated.json` at the root of the repository: `[{"id": "osu-skills", "kind": "wasm", "since": "2026-11-17", "reason": "why and what to do", "replacedBy": {"id": "osu-tools", "kind": "wasm", "repo": "compico/oc-plugins", "url": "https://…"}}]`. `kind` is `widget` for store plugins or `wasm` for standalone ones; `since` and `replacedBy` are optional; `url` must be https. Users who installed the plugin get a **Deprecated** mark with the reason, a button to the replacement and a note in the bell. The entry works after the plugin is deleted from the repository, and it is read only from sources the user added.
+- Users install the plugin from the **Store** tab of the **Plugins** window or copy the file by hand (see [Widgets and plugins](../plugins/)). The store checks the sha256, shows new permissions and never grants them by itself.
 
 ---
 
@@ -369,19 +441,21 @@ Import (module `oc`): `host_call(op_ptr, op_len, arg_ptr, arg_len) -> i64` runs 
 ```json
 {
   "id": "music", "name": "Music requests", "version": "0.1.0", "apiVersion": 1,
-  "permissions": ["storage", "timer", "net.http", "twitch.redemption", "events.publish", "chat.send"],
-  "subscriptions": ["twitch.redemption"],
+  "permissions": ["storage", "timer", "net.http", "twitch.redemption", "events.publish", "chat.send", "chat.command.read"],
+  "subscriptions": ["twitch.redemption", "chat.command"],
+  "commands": ["np"],
   "routes": [{"method": "GET", "path": "/next", "handler": "next"}],
   "events": [{"id": "now", "name": "Now playing"}],
+  "actions": [{"id": "toggle", "title": "Play / pause", "icon": "play", "path": "/control", "body": {"action": "toggle"}}],
   "widgets": [{"id": "queue", "name": "Queue", "entry": "queue.html", "width": 360, "height": 240}],
   "settings": "settings.html",
   "configSchema": {"rewardId": {"type": "string", "format": "twitch.reward", "title": "Reward"}}
 }
 ```
 
-A route handler gets `{"method","path","query":{…},"body":<json|null>}` and returns `{"status":200,"body":<json>}`. Events go to the handler named `on_event` with `{"type","data"}`: `twitch.redemption`, `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`).
+A route handler gets `{"method","path","query":{…},"body":<json|null>}` and returns `{"status":200,"body":<json>}`. Events go to the handler named `on_event` with `{"type","data"}`: `twitch.redemption`, `chat.command` (the `ChatCommand` object above; needs the subscription, the permission and `commands`), `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`). `actions` and `commands` are the same objects that `Meta.Actions` and `Meta.Commands` produce.
 
-Host operations (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Arguments are the JSON objects shown by the Go SDK functions above (for example `storage.set` takes `{"key","value"}`, `timer.set` takes `{"id","ms","repeat"}`, `chat.send` takes `{"text"}`).
+Host operations (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Arguments are the JSON objects shown by the Go SDK functions above (for example `storage.set` takes `{"key","value"}`, `timer.set` takes `{"id","ms","repeat"}`, `chat.send` takes `{"text","replyTo"?}`).
 
 A Rust SDK (like `ocplugin` for Go) is planned; see the [issue #136](https://github.com/compico/overlaycomposer/issues/136). Rust plugins on the same ABI weigh about 100 KB.
 
@@ -394,4 +468,6 @@ A Rust SDK (like `ocplugin` for Go) is planned; see the [issue #136](https://git
 3. Keep state in storage; never rely on variables or background work; answer routes immediately.
 4. Treat every viewer text (`Redemption.Input`, chat messages) as untrusted; never build HTML from it with `innerHTML`.
 5. Raise the version on every change.
-6. Build (`GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o <id>.wasm .`), install, grant permissions in **🧩 Plugins**, check the log (`plugin=<id>`).
+6. Chat commands are viewer text from strangers: check who may call them (`IsMod`, `IsSub`) and how often. Give Deck actions a `Danger` flag when they are visible to viewers or cannot be undone.
+7. Write `changelog.json` for every version; put a `migration` note where saved data or settings change.
+8. Build (`GOOS=wasip1 GOARCH=wasm go build -buildmode=c-shared -o <id>.wasm .`), install, grant permissions in **🧩 Plugins**, check the log (`plugin=<id>`).
