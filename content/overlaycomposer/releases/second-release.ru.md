@@ -1,7 +1,7 @@
 +++
 title = "OverlayComposer: микшер на Deck, магазин автономных плагинов, резервные копии"
-date = 2026-11-23T12:00:00+03:00
-version = "v2026.11.23"
+date = 2026-11-24T02:11:00+03:00
+version = "v2026.11.23.6"
 summary = "В Deck появились полноценный микшер OBS, плитки mute и папки со сценами, кнопки плагинов. У автономных плагинов — магазин с обновлением и откатом, команды чата и пометки об устаревании. Настройки можно экспортировать, сохранять снимками и держать в облаке."
 +++
 
@@ -78,8 +78,4 @@ summary = "В Deck появились полноценный микшер OBS, �
 
 Редактор также сразу замечает изменения настроек, сделанные в другом окне или на другом устройстве, не дожидаясь опроса.
 
-## Что дальше
-
-Кнопки плагинов внутри плитки-папки ([#169](https://github.com/compico/overlaycomposer/issues/169)) и **Rust SDK** для автономных плагинов ([#136](https://github.com/compico/overlaycomposer/issues/136)).
-
-[Скачать на GitHub Releases](https://github.com/compico/overlaycomposer/releases) · [Документация](../../docs/) · [Сообщить о проблеме](https://github.com/compico/overlaycomposer/issues)
+[Скачать на GitHub Releases](https://github.com/compico/overlaycomposer/releases/tag/v2026.11.23.6) · [Документация](../../docs/) · [Сообщить о проблеме](https://github.com/compico/overlaycomposer/issues)

@@ -1,7 +1,7 @@
 +++
 title = "OverlayComposer: a mixer on the Deck, a store for standalone plugins, backups"
-date = 2026-11-23T12:00:00+03:00
-version = "v2026.11.23"
+date = 2026-11-24T02:11:00+03:00
+version = "v2026.11.23.6"
 summary = "The Deck gets a full OBS mixer, mute and folder tiles and plugin buttons. Standalone plugins get a store with updates and rollback, chat commands and deprecation notices. Settings can be exported, snapshotted and kept in the cloud."
 +++
 
@@ -78,8 +78,4 @@ If you write plugins, see the updated guide [Writing plugins](../../docs/plugin-
 
 The editor also notices changes made in another window or on another device at once, without waiting.
 
-## What is next
-
-Plugin buttons inside the folder tile ([#169](https://github.com/compico/overlaycomposer/issues/169)) and a **Rust SDK** for standalone plugins ([#136](https://github.com/compico/overlaycomposer/issues/136)).
-
-[Download from GitHub Releases](https://github.com/compico/overlaycomposer/releases) · [Documentation](../../docs/) · [Report a problem](https://github.com/compico/overlaycomposer/issues)
+[Download from GitHub Releases](https://github.com/compico/overlaycomposer/releases/tag/v2026.11.23.6) · [Documentation](../../docs/) · [Report a problem](https://github.com/compico/overlaycomposer/issues)
