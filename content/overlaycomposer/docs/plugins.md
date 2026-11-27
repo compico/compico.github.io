@@ -20,7 +20,7 @@ A plugin is a ready-made widget with settings and, if needed, access to Twitch c
 
 **Add Source → Plugin store…** lists plugin repositories. The default is [compico/oc-plugins](https://github.com/compico/oc-plugins); you can add any repository as `owner/repo`, `owner/repo@branch-or-tag` or a github.com link. The catalog shows each plugin's version, requested permissions and the commit it is built from, and installs, updates and removes plugins with a button.
 
-An update is offered when the version in the repository is higher (or the files changed). New permissions are confirmed separately. To pin the code use a tag or a commit: `owner/repo@v1.2.0`. For private repositories add a fine-grained GitHub token (`Contents: Read-only`) in the store dialog; it is stored encrypted and sent only to `api.github.com`.
+If a plugin needs a newer plugin API than your Overlay Composer has (the version is shown in the settings as **Plugin API**), the store shows **Update the app** instead of **Install**: update Overlay Composer first. An update is offered when the version in the repository is higher (or the files changed). New permissions are confirmed separately. To pin the code use a tag or a commit: `owner/repo@v1.2.0`. For private repositories add a fine-grained GitHub token (`Contents: Read-only`) in the store dialog; it is stored encrypted and sent only to `api.github.com`.
 
 Installed widgets appear in **Add Source → Widgets**. After adding one, select its layer and edit its settings in the right panel (only the values you changed are saved; ↺ resets to the default).
 
@@ -65,6 +65,7 @@ A new plugin gets **no permissions** until you tick them.
 | `events.publish` | publish events to subscribers |
 | `chat.send` | write to the chat of the streamer's channel as the bot, also as a reply to a message |
 | `chat.command.read` | receive the chat commands (`!np`…) that the plugin lists; the permission window shows exactly which. The rest of the chat stays hidden |
+| `chat.read` | read **the whole chat** of the streamer's channel: every viewer's message, not only commands (for chat widgets); the window says so explicitly |
 | `net.local` | talk to a program on this computer at the addresses the plugin lists (for example `127.0.0.1:24050`); the window shows them |
 
 Giving or changing permissions restarts the plugin. A plugin that crashes 5 times in a minute is stopped until you restart it. Everything the plugin logs goes to the app log tagged `plugin=<id>`.

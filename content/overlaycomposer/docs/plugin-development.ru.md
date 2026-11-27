@@ -208,6 +208,7 @@ p.POST("/add", func(c *ocplugin.Ctx) error {
 | `events.publish` (`PermPublish`) | `Publish(topic, v)`, `PublishRetained(topic, v)` | события для виджетов, аддонов и Deck |
 | `chat.send` (`PermChat`) | `Say(text)`, `SayReply(messageID, text)` | сообщение в канале стримера **от имени бота** (`SayReply` — ответом на сообщение): до 300 символов, всплеск 3, затем одно в 3 с; канал и аккаунт выбирает хост |
 | `chat.command.read` (`PermChatCommandRead`) | `p.OnChatCommand(f)`, `Meta.Commands` | команды чата вроде `!np`; остальной чат плагину недоступен (см. ниже) |
+| `chat.read` (`PermChatRead`) | `p.OnChatMessage(f)` | **весь чат** канала стримера, сообщения всех зрителей (см. «Весь чат» ниже); не зависит от `chat.command.read` |
 
 Неудавшаяся операция возвращает `error` (например, `permission denied`).
 
@@ -422,6 +423,40 @@ func TestGreet(t *testing.T) {
 
 ---
 
+### Весь чат
+
+Для плагинов, которые показывают или хранят чат (виджет чата, история, модерация). `chat.read` даёт **все** сообщения, и окно прав говорит об этом прямо; если нужны только команды, берите `chat.command.read`. Хост читает чат канала по умолчанию (аккаунт стримера) и передаёт события плагину.
+
+```go
+p := ocplugin.New(ocplugin.Meta{
+	ID: "chat", Name: "Chat", Version: "0.1.0",
+	Permissions: []string{ocplugin.PermChatRead},
+})
+p.OnChatMessage(func(e ocplugin.ChatEvent) {
+	if e.Event != "message" {
+		return
+	}
+	for _, part := range e.Message.Parts { // текст уже нарезан на куски
+		if part.Emote != "" {
+			_ = part.URL // адрес картинки смайла
+		} else {
+			_ = part.Text
+		}
+	}
+})
+```
+
+- Вызов `OnChatMessage` подписывает плагин на `chat.message`; подписка требует разрешения `chat.read`.
+- `ChatEvent.Event`: `message` (поле `Message`), `delete` (`TargetID` — удалённое сообщение, либо `Login` — все сообщения пользователя), `clear` (весь чат, либо `Login` — у пользователя) или `status` (`connected`, `error` — состояние связи с чатом).
+- **Смайлы готовы к выводу.** `Message.Parts` — текст, уже нарезанный хостом по порядку: `{"text": "Привет! "}` или смайл `{"emote": "25", "name": "Kappa", "url": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0"}`. Позиции считать не нужно, и подделать смайл нельзя: зритель, напечатавший имя смайла, получит просто текст.
+- В `ChatMessage` есть также `ID`, `Login`, `DisplayName`, `Color`, `Text`, `Action` (`/me`), `Badges`, `IsBroadcaster`, `IsMod`, `IsVip`, `IsSub`, `FirstMsg`, `ReplyTo`, `Timestamp` (мс) и `FromBot` (сообщения самого бота тоже приходят).
+- **Текст, ники, цвета и смайлы — данные зрителей, им нельзя доверять**; не собирайте из них HTML через `innerHTML`.
+- События ставятся в одну очередь с остальными (256 событий): плагин, не успевающий за чатом, теряет лишнее. Для виджета храните историю в плагине (список в памяти и маршрут, который её отдаёт), а новые сообщения публикуйте через `Publish`; готовый плагин [`chat`](https://github.com/compico/oc-plugins/tree/main/wasm/chat) устроен именно так.
+
+### Версия API плагинов
+
+`oc_meta.apiVersion` — версия API плагинов, **которая нужна плагину**. Go SDK выставляет её сам: `1` по умолчанию, `2`, если плагин использует `chat.read` или `chat.message`. Overlay Composer принимает плагины от `1` до версии, которую поддерживает сам (в окне настроек она написана: **Plugin API: N**). Плагин, которому нужна более новая, не загружается: магазин показывает **Update the app** вместо **Install**, а приложение пишет, какая версия API нужна. Версии: `1` — всё до релиза `v2026.11.23.6`; `2` — `chat.read` и `chat.message`. Приложения старее (до `v2026.11.23.6` включительно) знают только версию `1` и отвечают плагину с `apiVersion` 2 так: `apiVersion 2 is not supported (host speaks 1)`.
+
 ## Часть 3. Другие языки (ABI)
 
 Файл `.wasm` для цели `wasip1` (reactor) с этими экспортами и одним импортом работает на любом языке. Всё, кроме сигнатур, — JSON, поэтому новые возможности не ломают готовые плагины. `i64` — это `(ptr << 32) | len` буфера в памяти плагина, `0` — пусто.
@@ -431,7 +466,7 @@ func TestGreet(t *testing.T) {
 | `alloc(n: i32) -> i32` | выделить не менее `n` байт |
 | `dealloc(ptr: i32)` | освободить буфер |
 | `oc_meta() -> i64` | **чистая** функция: JSON метаданных (вызывается на одноразовом экземпляре, `host_call` там недоступен) |
-| `oc_init(ptr, len) -> i64` | `{"apiVersion":1,"config":{…}}`; результат игнорируется |
+| `oc_init(ptr, len) -> i64` | `{"apiVersion":<версия API хоста>,"config":{…}}`; результат игнорируется |
 | `oc_call(name_ptr, name_len, arg_ptr, arg_len) -> i64` | обработчик маршрута (по имени из `oc_meta`) или `on_event` |
 
 Импорт (модуль `oc`): `host_call(op_ptr, op_len, arg_ptr, arg_len) -> i64` выполняет операцию хоста: на входе JSON-аргумент, на выходе JSON-результат (`{"error":"…"}` при ошибке). Если экспортирован `_initialize`, хост его вызывает. Go: `-buildmode=c-shared` с `//go:wasmexport` и `//go:wasmimport`; Rust: `cdylib` для `wasm32-wasip1`.
@@ -440,7 +475,7 @@ func TestGreet(t *testing.T) {
 
 ```json
 {
-  "id": "music", "name": "Music requests", "version": "0.1.0", "apiVersion": 1,
+  "id": "music", "name": "Music requests", "version": "0.1.0", "apiVersion": 1, // версия API, нужная плагину (2 для chat.read / chat.message)
   "permissions": ["storage", "timer", "net.http", "twitch.redemption", "events.publish", "chat.send", "chat.command.read"],
   "subscriptions": ["twitch.redemption", "chat.command"],
   "commands": ["np"],
@@ -453,7 +488,7 @@ func TestGreet(t *testing.T) {
 }
 ```
 
-Обработчик маршрута получает `{"method","path","query":{…},"body":<json|null>}` и возвращает `{"status":200,"body":<json>}`. События приходят в обработчик с именем `on_event` как `{"type","data"}`: `twitch.redemption`, `chat.command` (объект `ChatCommand` выше; нужны подписка, разрешение и `commands`), `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`). `actions` и `commands` — те же объекты, что строят `Meta.Actions` и `Meta.Commands`.
+Обработчик маршрута получает `{"method","path","query":{…},"body":<json|null>}` и возвращает `{"status":200,"body":<json>}`. События приходят в обработчик с именем `on_event` как `{"type","data"}`: `twitch.redemption`, `chat.command` (объект `ChatCommand` выше; нужны подписка, разрешение и `commands`), `chat.message` (объект `ChatEvent` из «Весь чат»; нужны подписка, `chat.read` и `apiVersion` 2), `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`). `actions` и `commands` — те же объекты, что строят `Meta.Actions` и `Meta.Commands`.
 
 Операции хоста (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Аргументы — JSON-объекты, которые строят функции Go SDK выше (например, `storage.set` принимает `{"key","value"}`, `timer.set` — `{"id","ms","repeat"}`, `chat.send` — `{"text","replyTo"?}`).
 

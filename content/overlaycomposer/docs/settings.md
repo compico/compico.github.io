@@ -47,7 +47,7 @@ Tokens and the Client Secret are stored encrypted on this computer only, refresh
 
 ## Application
 
-Version, the paths of the data and log folders (buttons open them), **Start with the system**, and **Quit Overlay Composer**.
+Version and plugin API version (**Plugin API**, which plugins the app can run), the paths of the data and log folders (buttons open them), **Start with the system**, and **Quit Overlay Composer**.
 
 | OS | Config | Data and logs |
 |---|---|---|
