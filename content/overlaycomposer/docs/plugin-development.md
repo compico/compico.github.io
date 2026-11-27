@@ -208,6 +208,7 @@ Declare permissions in `Meta.Permissions`; the user grants them.
 | `events.publish` (`PermPublish`) | `Publish(topic, v)`, `PublishRetained(topic, v)` | events for widgets, add-ons and the Deck |
 | `chat.send` (`PermChat`) | `Say(text)`, `SayReply(messageID, text)` | a message in the streamer's channel **as the bot** (`SayReply` as a reply to a message): up to 300 characters, burst 3 then 1 per 3 s; the host chooses channel and account |
 | `chat.command.read` (`PermChatCommandRead`) | `p.OnChatCommand(f)`, `Meta.Commands` | chat commands such as `!np`; the rest of the chat stays hidden (see below) |
+| `chat.read` (`PermChatRead`) | `p.OnChatMessage(f)` | **the whole chat** of the streamer's channel, every viewer's message (see "The whole chat" below); independent of `chat.command.read` |
 
 A failed operation returns an `error` (for example `permission denied`).
 
@@ -422,6 +423,40 @@ In [compico/oc-plugins](https://github.com/compico/oc-plugins) (or your own repo
 
 ---
 
+### The whole chat
+
+For plugins that show or store the chat (a chat widget, a history, moderation). `chat.read` gives **every** message, and the permission window says so; if you only need commands, use `chat.command.read`. The host reads the chat of the default channel (the streamer's account) and passes events to the plugin.
+
+```go
+p := ocplugin.New(ocplugin.Meta{
+	ID: "chat", Name: "Chat", Version: "0.1.0",
+	Permissions: []string{ocplugin.PermChatRead},
+})
+p.OnChatMessage(func(e ocplugin.ChatEvent) {
+	if e.Event != "message" {
+		return
+	}
+	for _, part := range e.Message.Parts { // the text is already cut into pieces
+		if part.Emote != "" {
+			_ = part.URL // an image address of the emote
+		} else {
+			_ = part.Text
+		}
+	}
+})
+```
+
+- Setting `OnChatMessage` subscribes the plugin to `chat.message`; the subscription needs the `chat.read` permission.
+- `ChatEvent.Event` is `message` (the `Message` field), `delete` (`TargetID` is the removed message, or `Login` for all messages of a user), `clear` (the whole chat, or `Login` for one user) or `status` (`connected`, `error`: the state of the chat connection).
+- **Emotes come ready to draw.** `Message.Parts` is the text already cut by the host in order: `{"text": "Hello! "}` or an emote `{"emote": "25", "name": "Kappa", "url": "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/3.0"}`. You do not count positions, and nothing outside the text can look like an emote: a viewer who types a fake emote name just gets text.
+- `ChatMessage` also has `ID`, `Login`, `DisplayName`, `Color`, `Text`, `Action` (`/me`), `Badges`, `IsBroadcaster`, `IsMod`, `IsVip`, `IsSub`, `FirstMsg`, `ReplyTo`, `Timestamp` (ms) and `FromBot` (the bot's own messages arrive too).
+- **Text, nicknames, colors and emotes are viewer data: do not trust them**, and never build HTML from them with `innerHTML`.
+- Events share one queue with the others (256 events): a plugin that cannot keep up with the chat loses the excess. For a widget, keep the history in the plugin (an in-memory list, a route that returns it) and publish new messages with `Publish`; the ready-made [`chat`](https://github.com/compico/oc-plugins/tree/main/wasm/chat) plugin does exactly this.
+
+### Plugin API version
+
+`oc_meta.apiVersion` is the version of the plugin API **that the plugin needs**. The Go SDK sets it itself: `1` by default, `2` when the plugin uses `chat.read` or `chat.message`. Overlay Composer accepts plugins from `1` up to the version it supports (the settings window shows it: **Plugin API: N**). A plugin that needs a newer one is not loaded: the store shows **Update the app** instead of **Install**, and the app says which API version is required. Versions: `1`: everything up to release `v2026.11.23.6`; `2`: `chat.read` and `chat.message`. Older applications (up to `v2026.11.23.6`) only know version `1` and answer a plugin with `apiVersion` 2 with `apiVersion 2 is not supported (host speaks 1)`.
+
 ## Part 3. Other languages (ABI)
 
 A `.wasm` file for the `wasip1` target (a reactor) with these exports and one import works in any language. Everything except signatures is JSON, so new features do not break existing plugins. `i64` is `(ptr << 32) | len` of a buffer in the plugin memory, `0` means empty.
@@ -431,7 +466,7 @@ A `.wasm` file for the `wasip1` target (a reactor) with these exports and one im
 | `alloc(n: i32) -> i32` | allocate at least `n` bytes |
 | `dealloc(ptr: i32)` | free a buffer |
 | `oc_meta() -> i64` | **pure** function: metadata JSON (called on a throwaway instance, `host_call` is not available) |
-| `oc_init(ptr, len) -> i64` | `{"apiVersion":1,"config":{…}}`; the result is ignored |
+| `oc_init(ptr, len) -> i64` | `{"apiVersion":<API version of the host>,"config":{…}}`; the result is ignored |
 | `oc_call(name_ptr, name_len, arg_ptr, arg_len) -> i64` | a route handler (by the name from `oc_meta`) or `on_event` |
 
 Import (module `oc`): `host_call(op_ptr, op_len, arg_ptr, arg_len) -> i64` runs a host operation: JSON argument in, JSON result out (`{"error":"…"}` on failure). If `_initialize` is exported the host calls it. Go: `-buildmode=c-shared` with `//go:wasmexport` and `//go:wasmimport`; Rust: `cdylib` for `wasm32-wasip1`.
@@ -440,7 +475,7 @@ Import (module `oc`): `host_call(op_ptr, op_len, arg_ptr, arg_len) -> i64` runs 
 
 ```json
 {
-  "id": "music", "name": "Music requests", "version": "0.1.0", "apiVersion": 1,
+  "id": "music", "name": "Music requests", "version": "0.1.0", "apiVersion": 1, // the API version the plugin needs (2 for chat.read / chat.message)
   "permissions": ["storage", "timer", "net.http", "twitch.redemption", "events.publish", "chat.send", "chat.command.read"],
   "subscriptions": ["twitch.redemption", "chat.command"],
   "commands": ["np"],
@@ -453,7 +488,7 @@ Import (module `oc`): `host_call(op_ptr, op_len, arg_ptr, arg_len) -> i64` runs 
 }
 ```
 
-A route handler gets `{"method","path","query":{…},"body":<json|null>}` and returns `{"status":200,"body":<json>}`. Events go to the handler named `on_event` with `{"type","data"}`: `twitch.redemption`, `chat.command` (the `ChatCommand` object above; needs the subscription, the permission and `commands`), `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`). `actions` and `commands` are the same objects that `Meta.Actions` and `Meta.Commands` produce.
+A route handler gets `{"method","path","query":{…},"body":<json|null>}` and returns `{"status":200,"body":<json>}`. Events go to the handler named `on_event` with `{"type","data"}`: `twitch.redemption`, `chat.command` (the `ChatCommand` object above; needs the subscription, the permission and `commands`), `chat.message` (the `ChatEvent` object from "The whole chat"; needs the subscription, `chat.read` and `apiVersion` 2), `timer` (`{"id"}`), `http.response` (`{"id","status","body","error"}`). `actions` and `commands` are the same objects that `Meta.Actions` and `Meta.Commands` produce.
 
 Host operations (`host_call`): `log`, `storage.get/set/delete`, `timer.set/clear`, `http.fetch`, `twitch.redemption.update`, `events.publish`, `chat.send`. Arguments are the JSON objects shown by the Go SDK functions above (for example `storage.set` takes `{"key","value"}`, `timer.set` takes `{"id","ms","repeat"}`, `chat.send` takes `{"text","replyTo"?}`).
 

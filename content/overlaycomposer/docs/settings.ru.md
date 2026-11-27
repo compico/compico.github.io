@@ -47,7 +47,7 @@ weight: 4
 
 ## Application
 
-Версия, пути к папкам данных и логов (кнопки открывают их), **Start with the system** и **Quit Overlay Composer**.
+Версия и версия API плагинов (**Plugin API**: какие плагины приложение может запускать), пути к папкам данных и логов (кнопки открывают их), **Start with the system** и **Quit Overlay Composer**.
 
 | ОС | Конфиг | Данные и логи |
 |---|---|---|
